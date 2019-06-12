@@ -2,7 +2,6 @@
 import subprocess
 import multiprocessing
 import os
-import time
 import sys
 import socket
 import re
@@ -186,18 +185,22 @@ def smtpEnum(ip_address, port):
 
 def smbNmap(ip_address, ports):
     print bcolors.HEADER + "INFO: Detected SMB on " + ip_address + " on " + ports
-    smb_nmap = "nmap -n -p %s --script=smb-enum-shares,smb-ls,smb-enum-users,smb-mbenum,smb-os-discovery,smb-security-mode,smb-vuln-cve2009-3103,smb-vuln-ms06-025,smb-vuln-ms07-029,smb-vuln-ms08-067,smb-vuln-ms10-054,smb-vuln-ms10-061,smb-vuln-regsvc-dos %s -oN ../reports/%s/smb_%s.nmap" % (ports, ip_address, ip_address, ip_address)
+    smb_nmap = "nmap -n -p %s --script=smb-enum-shares,smb-ls,smb-enum-users,smb-mbenum,smb-os-discovery,smb-security-mode,smb-vuln-cve2009-3103,smb-vuln-cve-2017-7494,smb-vuln-ms06-025,smb-vuln-ms07-029,smb-vuln-ms08-067,smb-vuln-ms10-054,smb-vuln-ms10-061,smb-vuln-ms17-010 %s -oN ../reports/%s/smb_%s.nmap" % (ports, ip_address, ip_address, ip_address)
     smbNmap_results = subprocess.check_output(smb_nmap, shell=True)
     print bcolors.OKGREEN + "INFO: RESULT BELOW - Finished with SMB-Nmap-scan for " + ip_address + " for ports " + ports + bcolors.ENDC
     print smbNmap_results
     return
 
-def smbEnum(ip_address, ports):
-    print bcolors.HEADER + "INFO: Detected SMB on " + ip_address + " on " + ports
+def smbEnum(ip_address, port):
+    print bcolors.HEADER + "INFO: Detected SMB on " + ip_address
     enum4linux = "enum4linux -a %s > ../reports/%s/enum4linux_%s.txt 2>/dev/null" % (ip_address, ip_address, ip_address)
     enum4linux_results = subprocess.check_output(enum4linux, shell=True)
-    print bcolors.OKGREEN + "INFO: CHECK FILE - Finished with ENUM4LINUX-Nmap-scan for " + ip_address + bcolors.ENDC
+    print bcolors.OKGREEN + "INFO: CHECK FILE - Finished with SMB-enum4linux for " + ip_address + bcolors.ENDC
     print enum4linux_results
+    smbmap = "smbmap -H %s" % (ip_address)
+    smbmap_results = subprocess.check_output(smbmap, shell=True)
+    print bcolors.OKGREEN + "INFO: RESULT BELOW - Finished with SMB-smbmap for " + ip_address + bcolors.ENDC
+    print smbmap_results
     NBTSCAN = "nbtscan -r %s/32" % (ip_address)
     nbtresults = subprocess.check_output(NBTSCAN, shell=True)
     print bcolors.OKGREEN + "INFO: RESULT BELOW - Finished with SMB-nbtscan for " + ip_address + bcolors.ENDC
@@ -295,16 +298,14 @@ def nmapScan(ip_address):
 
             port = line.split(" ")[0] # grab the port/proto
 
-            if service == "microsoft-ds" or service == "netbios-ssn":
-                service = "smb"
-
             if service in serv_dict:
                 ports = serv_dict[service] # if the service is already in the dict, grab the port list
 
             ports.append(port)
             serv_dict[service] = ports # add service to the dictionary along with the associated port(2)
 
-   # go through the service dictionary to call additional targeted enumeration functions
+    # go through the service dictionary to call additional targeted enumeration functions
+    called_smbEnum = False
     for serv in serv_dict:
         ports = serv_dict[serv]
         if re.search(r"http[^s]", serv):
@@ -323,9 +324,12 @@ def nmapScan(ip_address):
             for port in ports:
                 port = port.split("/")[0]
                 multProc(ftpEnum, ip_address, port)
-        elif "smb" in serv:
-            multProc(smbEnum, ip_address, ",".join(port.split("/")[0] for port in ports))
+        elif ("microsoft-ds" in serv) or (serv == "netbios-ssn"):
             multProc(smbNmap, ip_address, ",".join(port.split("/")[0] for port in ports))
+            if not called_smbEnum:
+                # call SMB enum only once
+                multProc(smbEnum, ip_address, "445")
+                called_smbEnum = True
         elif "ms-sql" in serv:
             for port in ports:
                 port = port.split("/")[0]

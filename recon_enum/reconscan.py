@@ -91,9 +91,9 @@ def write_to_file(ip_address, enum_type, data):
 
     return
 
-def dirb(ip_address, port, url_start, wordlist="/usr/share/wordlist/dirb/big.txt, /usr/share/wordlist/dirb/vulns/cgis.txt"):
-    print bcolors.HEADER + "INFO: Starting dirb scan for " + ip_address + bcolors.ENDC
-    DIRBSCAN = "dirb %s://%s:%s %s -o ../reports/%s/dirb-%s.txt -r" % (url_start, ip_address, port, ip_address, ip_address, wordlist)
+def dirb(ip_address, port, url_start, wordlist="/usr/share/wordlists/dirb/big.txt,/usr/share/wordlists/dirb/vulns/cgis.txt"):
+    print bcolors.HEADER + "INFO: Starting dirb scan for " + ip_address + ":" + port + bcolors.ENDC
+    DIRBSCAN = "dirb %s://%s:%s %s -o ../reports/%s/dirb-%s-%s.txt -r" % (url_start, ip_address, port, wordlist, ip_address, ip_address, port)
     print bcolors.HEADER + DIRBSCAN + bcolors.ENDC
     results_dirb = subprocess.check_output(DIRBSCAN, shell=True)
     print bcolors.OKGREEN + "INFO: RESULT BELOW - Finished with dirb scan for " + ip_address + bcolors.ENDC
@@ -102,8 +102,8 @@ def dirb(ip_address, port, url_start, wordlist="/usr/share/wordlist/dirb/big.txt
     return
 
 def nikto(ip_address, port, url_start):
-    print bcolors.HEADER + "INFO: Starting nikto scan for " + ip_address + bcolors.ENDC
-    NIKTOSCAN = "nikto -h %s://%s:%s -o ../reports/%s/nikto-%s-%s.txt" % (url_start, ip_address, port, ip_address, url_start, ip_address)
+    print bcolors.HEADER + "INFO: Starting nikto scan for " + ip_address + ":" + port + bcolors.ENDC
+    NIKTOSCAN = "nikto -h %s://%s:%s -o ../reports/%s/nikto-%s-%s.txt" % (url_start, ip_address, port, ip_address, ip_address, port)
     print bcolors.HEADER + NIKTOSCAN + bcolors.ENDC
     results_nikto = subprocess.check_output(NIKTOSCAN, shell=True)
     print bcolors.OKGREEN + "INFO: RESULT BELOW - Finished with NIKTO-scan for " + ip_address + bcolors.ENDC
@@ -141,15 +141,15 @@ def httpsEnum(ip_address, port):
     nikto_process = multiprocessing.Process(target=nikto, args=(ip_address, port, "https"))
     nikto_process.start()
 
-    SSLSCAN = "sslscan %s:%s >> ../reports/%s/ssl_scan_%s" % (ip_address, port, ip_address, ip_address)
+    SSLSCAN = "sslscan %s:%s >> ../reports/%s/ssl_scan_%s_%s.txt" % (ip_address, port, ip_address, ip_address, port)
     print bcolors.HEADER + SSLSCAN + bcolors.ENDC
     subprocess.check_output(SSLSCAN, shell=True)
-    print bcolors.OKGREEN + "INFO: CHECK FILE - Finished with SSLSCAN for " + ip_address + bcolors.ENDC
+    print bcolors.OKGREEN + "INFO: CHECK FILE - Finished with SSLSCAN for " + ip_address + ":" + port + bcolors.ENDC
 
     HTTPSCANS = "nmap -n -sV -Pn  -p %s --script=http-vhosts,http-userdir-enum,http-apache-negotiation,http-backup-finder,http-config-backup,http-default-accounts,http-methods,http-method-tamper,http-passwd,http-robots.txt,http-devframework,http-enum,http-frontpage-login,http-git,http-iis-webdav-vuln,http-php-version,http-robots.txt,http-shellshock,http-vuln-cve2015-1635 -oN ../reports/%s/%s_http.nmap %s" % (port, ip_address, ip_address, ip_address)
     print bcolors.HEADER + HTTPSCANS + bcolors.ENDC
     https_results = subprocess.check_output(HTTPSCANS, shell=True)
-    print bcolors.OKGREEN + "INFO: RESULT BELOW - Finished with HTTPS-scan for " + ip_address + bcolors.ENDC
+    print bcolors.OKGREEN + "INFO: RESULT BELOW - Finished with HTTPS-scan for " + ip_address + ":" + port + bcolors.ENDC
     print https_results
     return
 
@@ -159,7 +159,7 @@ def mssqlEnum(ip_address, port):
     MSSQLSCAN = "nmap -n -sV -Pn -p %s --script=ms-sql-info,ms-sql-empty-password,ms-sql-config,ms-sql-hasdbaccess,ms-sql-dump-hashes --script-args=mssql.instance-port=%s -oN ../reports/%s/mssql_%s.nmap %s" % (port, port, ip_address, ip_address, ip_address)
     print bcolors.HEADER + MSSQLSCAN + bcolors.ENDC
     mssql_results = subprocess.check_output(MSSQLSCAN, shell=True)
-    print bcolors.OKGREEN + "INFO: RESULT BELOW - Finished with MSSQL-scan for " + ip_address + bcolors.ENDC
+    print bcolors.OKGREEN + "INFO: RESULT BELOW - Finished with MSSQL-scan for " + ip_address + ":" + port + bcolors.ENDC
     print mssql_results
     return
 
@@ -169,7 +169,7 @@ def mysqlEnum(ip_address, port):
     MYSQLSCAN = "nmap -n -sV -Pn -p %s --script=mysql-empty-password,mysql-enum,mysql-users,mysql-variables,mysql-vuln-cve2012-2122 -oN ../reports/%s/mysql_%s.nmap %s" % (port, ip_address, ip_address, ip_address)
     print bcolors.HEADER + MYSQLSCAN + bcolors.ENDC
     mysql_results = subprocess.check_output(MYSQLSCAN, shell=True)
-    print bcolors.OKGREEN + "INFO: RESULT BELOW - Finished with MySQL-scan for " + ip_address + bcolors.ENDC
+    print bcolors.OKGREEN + "INFO: RESULT BELOW - Finished with MySQL-scan for " + ip_address + ":" + port + bcolors.ENDC
     print mysql_results
     return
 
@@ -179,7 +179,7 @@ def smtpEnum(ip_address, port):
     SMTPSCAN = "nmap -n -sV -Pn -p %s --script=smtp-commands,smtp-enum-users,smtp-vuln-cve2010-4344,smtp-vuln-cve2011-1720,smtp-vuln-cve2011-1764 %s -oN ../reports/%s/smtp_%s.nmap" % (port, ip_address, ip_address, ip_address)
     print bcolors.HEADER + SMTPSCAN + bcolors.ENDC
     smtp_results = subprocess.check_output(SMTPSCAN, shell=True)
-    print bcolors.OKGREEN + "INFO: RESULT BELOW - Finished with SMTP-scan for " + ip_address + bcolors.ENDC
+    print bcolors.OKGREEN + "INFO: RESULT BELOW - Finished with SMTP-scan for " + ip_address + ":" + port + bcolors.ENDC
     print smtp_results
     return
 
@@ -219,7 +219,7 @@ def ftpEnum(ip_address, port):
 
 def udpScan(ip_address):
     print bcolors.HEADER + "INFO: Detecting UDP on " + ip_address + bcolors.ENDC
-    UDPSCAN = "nmap -n -Pn -A -sC -sU -T 3 --top-ports 200 -oN '../reports/%s/udp_%s.nmap' %s"  % (ip_address, ip_address, ip_address)
+    UDPSCAN = "nmap -n -Pn -A -sC -sU -T 3 --top-ports 200 -oA '../reports/%s/udp_%s' %s"  % (ip_address, ip_address, ip_address)
     print bcolors.HEADER + UDPSCAN + bcolors.ENDC
     udpscan_results = subprocess.check_output(UDPSCAN, shell=True)
     print bcolors.OKGREEN + "INFO: RESULT BELOW - Finished with UDP-Nmap scan for " + ip_address + bcolors.ENDC
@@ -239,17 +239,17 @@ def sshScan(ip_address, port):
     return
 
 def pop3Scan(ip_address, port):
-    print bcolors.HEADER + "INFO: Detected POP3 on " + ip_address + ":" + port  + bcolors.ENDC
+    print bcolors.HEADER + "INFO: Detected POP3 on " + ip_address + ":" + port + bcolors.ENDC
     connect_to_port(ip_address, port, "pop3")
     POP3SCAN = "nmap -n -sV -Pn -p %s --script=pop3-brute,pop3-capabilities,pop3-ntlm-info -oN '../reports/%s/pop3_%s.nmap' %s" % (port, ip_address, ip_address, ip_address)
     print bcolors.HEADER + POP3SCAN + bcolors.ENDC
     results_pop3 = subprocess.check_output(POP3SCAN, shell=True)
-    print bcolors.OKGREEN + "INFO: RESULT BELOW - Finished with POP3-Nmap-scan for " + ip_address + bcolors.ENDC
+    print bcolors.OKGREEN + "INFO: RESULT BELOW - Finished with POP3-Nmap-scan for " + ip_address + ":" + port + bcolors.ENDC
     print results_pop3
     return
 
 def snmpEnum(ip_address, port):
-    print bcolors.HEADER + "INFO: Detected SNMP on " + ip_address + ":" + port
+    print bcolors.HEADER + "INFO: Detected SNMP on " + ip_address + ":" + port + bcolors.ENDC
     onesixtyone = "onesixtyone %s > ../reports/%s/onesixtyone_%s.txt 2>/dev/null" % (ip_address, ip_address, ip_address)
     onesixtyone_results = subprocess.check_output(onesixtyone, shell=True)
     if onesixtyone_results != "":
@@ -266,7 +266,7 @@ def snmpEnum(ip_address, port):
 
     SNMPSCAN = "nmap -n -vv -sV -sU -Pn -p 161,162 --script=snmp-netstat,snmp-processes -oN '../reports/%s/snmp_%s.nmap' %s" % (ip_address, ip_address, ip_address)
     results_snmp = subprocess.check_output(SNMPSCAN, shell=True)
-    print bcolors.OKGREEN + "INFO: RESULT BELOW - Finished with SNMP-Nmap-scan for " + ip_address + bcolors.ENDC
+    print bcolors.OKGREEN + "INFO: RESULT BELOW - Finished with SNMP-Nmap-scan for " + ip_address + ":" + port + bcolors.ENDC
     print results_snmp
     return
 
@@ -308,7 +308,7 @@ def nmapScan(ip_address):
     called_smbEnum = False
     for serv in serv_dict:
         ports = serv_dict[serv]
-        if re.search(r"http[^s]", serv):
+        if serv == "http":
             for port in ports:
                 port = port.split("/")[0]
                 multProc(httpEnum, ip_address, port)

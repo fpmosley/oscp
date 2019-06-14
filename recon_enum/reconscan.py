@@ -156,7 +156,7 @@ def httpsEnum(ip_address, port):
 def mssqlEnum(ip_address, port):
     print bcolors.HEADER + "INFO: Detected MS-SQL on " + ip_address + ":" + port + bcolors.ENDC
     print bcolors.HEADER + "INFO: Performing nmap mssql script scan for " + ip_address + ":" + port + bcolors.ENDC
-    MSSQLSCAN = "nmap -n -sV -Pn -p %s --script=ms-sql-info,ms-sql-empty-password,ms-sql-config,ms-sql-hasdbaccess,ms-sql-dump-hashes --script-args=mssql.instance-port=%s -oN ../reports/%s/mssql_%s.nmap %s" % (port, port, ip_address, ip_address, ip_address)
+    MSSQLSCAN = "nmap -n -sV -Pn -p %s --script=ms-sql-empty-password,ms-sql-info,ms-sql-config,ms-sql-hasdbaccess,ms-sql-dump-hashes --script-args=mssql.instance-port=%s -oN ../reports/%s/mssql_%s.nmap %s" % (port, port, ip_address, ip_address, ip_address)
     print bcolors.HEADER + MSSQLSCAN + bcolors.ENDC
     mssql_results = subprocess.check_output(MSSQLSCAN, shell=True)
     print bcolors.OKGREEN + "INFO: RESULT BELOW - Finished with MSSQL-scan for " + ip_address + ":" + port + bcolors.ENDC
@@ -185,7 +185,7 @@ def smtpEnum(ip_address, port):
 
 def smbNmap(ip_address, ports):
     print bcolors.HEADER + "INFO: Detected SMB on " + ip_address + " on " + ports
-    smb_nmap = "nmap -n -p %s --script=smb-enum-shares,smb-ls,smb-enum-users,smb-mbenum,smb-os-discovery,smb-security-mode,smb-vuln-cve2009-3103,smb-vuln-cve-2017-7494,smb-vuln-ms06-025,smb-vuln-ms07-029,smb-vuln-ms08-067,smb-vuln-ms10-054,smb-vuln-ms10-061,smb-vuln-ms17-010 %s -oN ../reports/%s/smb_%s.nmap" % (ports, ip_address, ip_address, ip_address)
+    smb_nmap = "nmap -n -p %s --script=smb-enum-shares,smb-ls,smb-enum-users,smb-mbenum,smb-os-discovery,smb-security-mode,smb-vuln-cve2009-3103,smb-vuln-cve-2017-7494,smb-vuln-ms06-025,smb-vuln-ms07-029,smb-vuln-ms08-067,smb-vuln-ms10-054,smb-vuln-ms10-061,smb-vuln-ms17-010 %s -oN ../reports/%s/smb_%s_%s.nmap" % (ports, ip_address, ip_address, ip_address, ports.replace(",", "_"))
     smbNmap_results = subprocess.check_output(smb_nmap, shell=True)
     print bcolors.OKGREEN + "INFO: RESULT BELOW - Finished with SMB-Nmap-scan for " + ip_address + " for ports " + ports + bcolors.ENDC
     print smbNmap_results

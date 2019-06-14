@@ -312,7 +312,7 @@ def nmapScan(ip_address):
             for port in ports:
                 port = port.split("/")[0]
                 multProc(httpEnum, ip_address, port)
-        elif re.search(r"https|ssl", serv):
+        elif (serv == "https") or (serv == "ssl/https"):
             for port in ports:
                 port = port.split("/")[0]
                 multProc(httpsEnum, ip_address, port)

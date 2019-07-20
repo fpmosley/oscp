@@ -146,7 +146,7 @@ def httpsEnum(ip_address, port):
     subprocess.check_output(SSLSCAN, shell=True)
     print bcolors.OKGREEN + "INFO: CHECK FILE - Finished with SSLSCAN for " + ip_address + ":" + port + bcolors.ENDC
 
-    HTTPSCANS = "nmap -n -sV -Pn  -p %s --script=http-vhosts,http-userdir-enum,http-apache-negotiation,http-backup-finder,http-config-backup,http-default-accounts,http-methods,http-method-tamper,http-passwd,http-robots.txt,http-devframework,http-enum,http-frontpage-login,http-git,http-iis-webdav-vuln,http-php-version,http-robots.txt,http-shellshock,http-vuln-cve2015-1635 -oN ../reports/%s/%s_http.nmap %s" % (port, ip_address, ip_address, ip_address)
+    HTTPSCANS = "nmap -n -sV -Pn -p %s --script=http-vhosts,http-userdir-enum,http-apache-negotiation,http-backup-finder,http-config-backup,http-default-accounts,http-methods,http-method-tamper,http-passwd,http-robots.txt,http-devframework,http-enum,http-frontpage-login,http-git,http-iis-webdav-vuln,http-php-version,http-robots.txt,http-shellshock,http-vuln-cve2015-1635 -oN ../reports/%s/%s_http.nmap %s" % (port, ip_address, ip_address, ip_address)
     print bcolors.HEADER + HTTPSCANS + bcolors.ENDC
     https_results = subprocess.check_output(HTTPSCANS, shell=True)
     print bcolors.OKGREEN + "INFO: RESULT BELOW - Finished with HTTPS-scan for " + ip_address + ":" + port + bcolors.ENDC
@@ -217,16 +217,16 @@ def ftpEnum(ip_address, port):
     print results_ftp
     return
 
-def udpScan(ip_address):
+def udpScan(ip_address, ports):
     print bcolors.HEADER + "INFO: Detecting UDP on " + ip_address + bcolors.ENDC
-    UDPSCAN = "nmap -n -Pn -A -sC -sU -T 3 --top-ports 200 -oA '../reports/%s/udp_%s' %s"  % (ip_address, ip_address, ip_address)
+    UDPSCAN = "nmap -n -Pn -A -sC -sU -T 3 -p %s -oA '../reports/%s/udp_%s' %s"  % (ports, ip_address, ip_address, ip_address)
     print bcolors.HEADER + UDPSCAN + bcolors.ENDC
     udpscan_results = subprocess.check_output(UDPSCAN, shell=True)
     print bcolors.OKGREEN + "INFO: RESULT BELOW - Finished with UDP-Nmap scan for " + ip_address + bcolors.ENDC
     print udpscan_results
-    UNICORNSCAN = "unicornscan -mU -I %s > ../reports/%s/unicorn_udp_%s.txt" % (ip_address, ip_address, ip_address)
-    subprocess.check_output(UNICORNSCAN, shell=True)
-    print bcolors.OKGREEN + "INFO: CHECK FILE - Finished with UNICORNSCAN for " + ip_address + bcolors.ENDC
+    #UNICORNSCAN = "unicornscan -mU -I %s > ../reports/%s/unicorn_udp_%s.txt" % (ip_address, ip_address, ip_address)
+    #subprocess.check_output(UNICORNSCAN, shell=True)
+    #print bcolors.OKGREEN + "INFO: CHECK FILE - Finished with UNICORNSCAN for " + ip_address + bcolors.ENDC
 
 def sshScan(ip_address, port):
     print bcolors.HEADER + "INFO: Detected SSH on " + ip_address + ":" + port  + bcolors.ENDC
@@ -270,18 +270,61 @@ def snmpEnum(ip_address, port):
     print results_snmp
     return
 
-def nmapScan(ip_address):
-    ip_address = ip_address.strip()
-    print bcolors.OKGREEN + "INFO: Running general TCP/UDP nmap scans for " + ip_address + bcolors.ENDC
+def nfsScan(ip_address, port):
+    print bcolors.HEADER + "INFO: Detected RPCBIND on " + ip_address + ":" + port + bcolors.ENDC
+    NFSSCAN = "nmap -n -sS -Pn -p %s --script=nfs* -oN '../reports/%s/nfs_%s.nmap' %s" % (port, ip_address, ip_address, ip_address)
+    print bcolors.HEADER + NFSSCAN + bcolors.ENDC
+    results_nfs = subprocess.check_output(NFSSCAN, shell=True)
+    print bcolors.OKGREEN + "INFO: RESULT BELOW - Finished with NFS-Nmap-scan for " + ip_address + ":" + port + bcolors.ENDC
+    print results_nfs
+    return
 
-    TCPSCAN = "nmap -n -sV -O %s -oA '../reports/%s/tcp_%s'"  % (ip_address, ip_address, ip_address)
+def masscan(ip_address):
+    ip_address = ip_address.strip()
+    print bcolors.OKGREEN + "INFO: Running masscan for " + ip_address + bcolors.ENDC
+
+    #MASSCAN = "masscan -e tun0 -p1-65535,U:1-65535 --rate 300 --interactive %s -oG '../reports/%s/masscan.txt'" % (ip_address, ip_address)
+    #MASSCAN = "masscan -e eth0 --router-mac 8c-85-90-00-1c-88  -p1-65535,U:1-65535 --rate 1000 %s | tee '../reports/%s/masscan.txt'" % (ip_address, ip_address)
+    MASSCAN = "masscan -e tun0 -p1-65535,U:1-65535 --rate 1000 %s | tee '../reports/%s/masscan.txt'" % (ip_address, ip_address)
+    print bcolors.HEADER + MASSCAN + bcolors.ENDC
+    output = subprocess.check_output(MASSCAN, shell=True)
+    print bcolors.OKGREEN + "INFO: RESULT BELOW - Finished with masscan for " + ip_address + bcolors.ENDC
+    print output
+    
+    # Get discovered TCP ports from the masscan output, sort them and run nmap for those
+    results = re.findall('port (\d*)/tcp', output)
+    if results:
+        tcp_ports = list({int(port) for port in results})
+        tcp_ports.sort()
+        tcp_ports = ''.join(str(tcp_ports)[1:-1].split())
+        
+        # Running nmap
+        p = multiprocessing.Process(target=nmapScan, args=(ip_address, tcp_ports))
+        p.start()
+
+    # Get discovered UDP ports from the masscan output, sort them and run nmap for those
+    results = re.findall('port (\d*)/udp', output)
+    if results:
+        udp_ports = list({int(port) for port in results})
+        udp_ports.sort()
+        udp_ports = ''.join(str(udp_ports)[1:-1].split())
+        
+        # Running nmap
+        p = multiprocessing.Process(target=udpScan, args=(ip_address, udp_ports))
+        p.start()
+
+def nmapScan(ip_address, ports):
+    ip_address = ip_address.strip()
+    print bcolors.OKGREEN + "INFO: Running general TCP nmap scans for " + ip_address + bcolors.ENDC
+
+    TCPSCAN = "nmap -n -A -p %s %s -oA '../reports/%s/tcp_%s'"  % (ports, ip_address, ip_address, ip_address)
     print bcolors.HEADER + TCPSCAN + bcolors.ENDC
     results = subprocess.check_output(TCPSCAN, shell=True)
-    print bcolors.OKGREEN + "INFO: RESULT BELOW - Finished with BASIC Nmap-scan for " + ip_address + bcolors.ENDC
+    print bcolors.OKGREEN + "INFO: RESULT BELOW - Finished with Nmap scan for " + ip_address + bcolors.ENDC
     print results
 
-    p = multiprocessing.Process(target=udpScan, args=(ip_address,))
-    p.start()
+    #p = multiprocessing.Process(target=udpScan, args=(ip_address,))
+    #p.start()
 
     write_to_file(ip_address, "portscan", results)
     lines = results.split("\n")
@@ -350,6 +393,10 @@ def nmapScan(ip_address):
             for port in ports:
                 port = port.split("/")[0]
                 multProc(snmpEnum, ip_address, port)
+        elif "rpcbind" in serv:
+            for port in ports:
+                port = port.split("/")[0]
+                multProc(nfsScan, ip_address, port)
 
     return
 
@@ -395,5 +442,5 @@ if __name__ == '__main__':
         subprocess.check_output("sed -i -e 's/INSERTIPADDRESS/" + scanip + "/g' ../reports/" + scanip + "/mapping-windows.md", shell=True)
         subprocess.check_output("sed -i -e 's/INSERTIPADDRESS/" + scanip + "/g' ../reports/" + scanip + "/mapping-linux.md", shell=True)
 
-        p = multiprocessing.Process(target=nmapScan, args=(scanip,))
+        p = multiprocessing.Process(target=masscan, args=(scanip,))
         p.start()

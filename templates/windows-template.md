@@ -7,9 +7,12 @@
 - Server:
 - Workgroup:
 - Windows domain:
-- Services and ports:
 
+Services and ports:
+
+```
 INSERTTCPSCAN
+```
 
 
 ## Recon
@@ -44,7 +47,11 @@ nmap INSERTIPADDRESS -p- -A -T4 -sC
 - Version:
 - Anonymous login:
 
+FTP Test:
+
+```
 INSERTFTPTEST
+```
 
 ```
 nmap --script=ftp-anon,ftp-libopie,ftp-proftpd-backdoor,ftp-vsftpd-backdoor,ftp-vuln-cve2010-4221,tftp-enum -p 21 INSERTIPADDRESS
@@ -59,8 +66,11 @@ nmap --script=ftp-anon,ftp-libopie,ftp-proftpd-backdoor,ftp-vsftpd-backdoor,ftp-
 - Takes-password:
 If you have usernames test login with username:username
 
-INSERTSSHCONNECT
+SSH Connect:
 
+```
+INSERTSSHCONNECT
+```
 
 ### Port 25
 
@@ -69,7 +79,11 @@ INSERTSSHCONNECT
 - VRFY:
 - EXPN:
 
+SMTP Connect:
+
+```
 INSERTSMTPCONNECT
+```
 
 ```
 nc -nvv INSERTIPADDRESS 25
@@ -83,7 +97,11 @@ nmap --script=smtp-commands,smtp-enum-users,smtp-vuln-cve2010-4344,smtp-vuln-cve
 - Name:
 - Version:
 
+POP3 Connect:
+
+```
 INSERTPOP3CONNECT
+```
 
 ### Port 135 - MSRPC
 
@@ -252,8 +270,11 @@ ncrack -vv --user Administrator -P /root/oscp/passwords.txt rdp://INSERTIPADDRES
 - Apache Modules:
 - Domain-name address:
 
-INSERTCURLHEADER
+cURL Header:
 
+```
+INSERTCURLHEADER
+```
 
 - Web application
 - Name:
@@ -283,9 +304,9 @@ dotdotpwn.pl -m http -h INSERTIPADDRESS -M GET -o unix
 
 #### Nikto scan
 
-
+```
 INSERTNIKTOSCAN
-
+```
 
 
 #### Url brute force
@@ -300,7 +321,11 @@ dirb http://INSERTIPADDRESS -r -o dirb-INSERTIPADDRESS.txt
 gobuster -u http://INSERTIPADDRESS -w /usr/share/seclists/Discovery/Web_Content/common.txt -s '200,204,301,302,307,403,500' -e
 ```
 
+Dirb Scan:
+
+```
 INSERTDIRBSCAN
+```
 
 
 #### Default/Weak login

@@ -9,7 +9,10 @@
 - Windows domain:
 
 Services and ports:
+
+```
 INSERTTCPSCAN
+```
 
 ## Recon
 
@@ -44,7 +47,11 @@ nmap INSERTIPADDRESS -p- -A -T4 -sC
 - FTP-version:
 - Anonymous login:
 
+FTP Test:
+
+```
 INSERTFTPTEST
+```
 
 
 ```
@@ -58,7 +65,11 @@ nmap --script=ftp-anon,ftp-libopie,ftp-proftpd-backdoor,ftp-vsftpd-backdoor,ftp-
 - Takes-password:
 - If you have usernames test login with username:username
 
+SSH Connect:
+
+```
 INSERTSSHCONNECT
+```
 
 ```
 nc INSERTIPADDRESS 22
@@ -70,7 +81,11 @@ nc INSERTIPADDRESS 22
 - Version:
 - VRFY:
 
+SMTP Connect:
+
+```
 INSERTSMTPCONNECT
+```
 
 
 ```
@@ -93,7 +108,11 @@ This is used for tftp-server.
 - Name:
 - Version:
 
+POP3 Connect:
+
+```
 INSERTPOP3CONNECT
+```
 
 ```
 telnet INSERTIPADDRESS 110
@@ -241,8 +260,11 @@ mysql --host=INSERTIPADDRESS -u root -p
 - IP-address:
 - Domain-name address:
 
+cURL Header:
 
+```
 INSERTCURLHEADER
+```
 
 - Web application (ex, wordpress, joomla, phpmyadmin)
 - Name:
@@ -291,8 +313,9 @@ dotdotpwn.pl -m http -h INSERTIPADDRESS -M GET -o unix
 
 #### Nikto scan
 
-
+```
 INSERTNIKTOSCAN
+```
 
 
 #### Url brute force
@@ -305,7 +328,11 @@ dirb http://INSERTIPADDRESS -r -o dirb-INSERTIPADDRESS.txt
 gobuster -u http://INSERTIPADDRESS -w /usr/share/seclists/Discovery/Web_Content/common.txt -s '200,204,301,302,307,403,500' -e
 ```
 
+Dirb Scan:
+
+```
 INSERTDIRBSCAN
+```
 
 
 #### Default/Weak login

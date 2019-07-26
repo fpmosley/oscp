@@ -76,6 +76,8 @@ def write_to_file(ip_address, enum_type, data):
         search_string = "INSERTPOP3CONNECT"
     if enum_type == "curl":
         search_string = "INSERTCURLHEADER"
+    if enum_type == "nfs":
+        search_string = "INSERTRPCBIND"
 
     # Search and replace
     for path in paths:
@@ -91,7 +93,7 @@ def write_to_file(ip_address, enum_type, data):
 
     return
 
-def dirb(ip_address, port, url_start, wordlist="/usr/share/wordlists/dirb/big.txt,/usr/share/wordlists/dirb/vulns/cgis.txt"):
+def dirb(ip_address, port, url_start, wordlist="/usr/share/wordlists/dirb/common.txt"):
     print bcolors.HEADER + "INFO: Starting dirb scan for " + ip_address + ":" + port + bcolors.ENDC
     DIRBSCAN = "dirb %s://%s:%s %s -o ../reports/%s/dirb-%s-%s.txt -r" % (url_start, ip_address, port, wordlist, ip_address, ip_address, port)
     print bcolors.HEADER + DIRBSCAN + bcolors.ENDC
@@ -130,6 +132,15 @@ def httpEnum(ip_address, port):
     http_results = subprocess.check_output(HTTPSCAN, shell=True)
     print bcolors.OKGREEN + "INFO: RESULT BELOW - Finished with HTTP-SCAN for " + ip_address + bcolors.ENDC
     print http_results
+    
+    if "Drupal" in http_results:
+        print bcolors.HEADER + "INFO: Detected Drupal on " + ip_address + ":" + port + bcolors.ENDC
+        print bcolors.HEADER + "INFO: Performing Drupal scan for " + ip_address + ":" + port + bcolors.ENDC
+        DRUPALSCAN = "droopescan scan drupal -u http://%s:%s | tee ../reports/%s/droopescan_%s.txt" % (ip_address, port, ip_address, port)
+        drupal_results = subprocess.check_output(DRUPALSCAN, shell=True)
+        print bcolors.OKGREEN + "INFO: RESULT BELOW - Finished with DRUPAL-SCAN for " + ip_address + bcolors.ENDC
+        print drupal_results
+
     return
 
 def httpsEnum(ip_address, port):
@@ -173,6 +184,16 @@ def mysqlEnum(ip_address, port):
     print mysql_results
     return
 
+def oracleEnum(ip_address, port):
+    print bcolors.HEADER + "INFO: Detected Oracle on " + ip_address + ":" + port + bcolors.ENDC
+    print bcolors.HEADER + "INFO: Performing nmap oracle script scan for " + ip_address + ":" + port + bcolors.ENDC
+    ORACLESCAN = "nmap -n -sV -Pn -p %s --script=oracle-tns-version,oracle-sid-brute,oracle-enum-users -oN ../reports/%s/oracle_%s.nmap %s" % (port, ip_address, ip_address, ip_address)
+    print bcolors.HEADER + ORACLESCAN + bcolors.ENDC
+    oracle_results = subprocess.check_output(ORACLESCAN, shell=True)
+    print bcolors.OKGREEN + "INFO: RESULT BELOW - Finished with Oracle-scan for " + ip_address + ":" + port + bcolors.ENDC
+    print oracle_results
+    return
+
 def smtpEnum(ip_address, port):
     print bcolors.HEADER + "INFO: Detected smtp on " + ip_address + ":" + port  + bcolors.ENDC
     connect_to_port(ip_address, port, "smtp")
@@ -185,7 +206,7 @@ def smtpEnum(ip_address, port):
 
 def smbNmap(ip_address, ports):
     print bcolors.HEADER + "INFO: Detected SMB on " + ip_address + " on " + ports
-    smb_nmap = "nmap -n -p %s --script=smb-enum-shares,smb-ls,smb-enum-users,smb-mbenum,smb-os-discovery,smb-security-mode,smb-vuln-cve2009-3103,smb-vuln-cve-2017-7494,smb-vuln-ms06-025,smb-vuln-ms07-029,smb-vuln-ms08-067,smb-vuln-ms10-054,smb-vuln-ms10-061,smb-vuln-ms17-010 %s -oN ../reports/%s/smb_%s_%s.nmap" % (ports, ip_address, ip_address, ip_address, ports.replace(",", "_"))
+    smb_nmap = "nmap -n -p %s --script=smb-enum-shares,smb-ls,smb-enum-users,smb-mbenum,smb-os-discovery,smb-security-mode,msrpc-enum,smb-vuln-cve2009-3103,smb-vuln-cve-2017-7494,smb-vuln-ms06-025,smb-vuln-ms07-029,smb-vuln-ms08-067,smb-vuln-ms10-054,smb-vuln-ms10-061,smb-vuln-ms17-010 %s -oN ../reports/%s/smb_%s_%s.nmap" % (ports, ip_address, ip_address, ip_address, ports.replace(",", "_"))
     smbNmap_results = subprocess.check_output(smb_nmap, shell=True)
     print bcolors.OKGREEN + "INFO: RESULT BELOW - Finished with SMB-Nmap-scan for " + ip_address + " for ports " + ports + bcolors.ENDC
     print smbNmap_results
@@ -227,6 +248,14 @@ def udpScan(ip_address, ports):
     #UNICORNSCAN = "unicornscan -mU -I %s > ../reports/%s/unicorn_udp_%s.txt" % (ip_address, ip_address, ip_address)
     #subprocess.check_output(UNICORNSCAN, shell=True)
     #print bcolors.OKGREEN + "INFO: CHECK FILE - Finished with UNICORNSCAN for " + ip_address + bcolors.ENDC
+
+def udpTopScan(ip_address):
+    print bcolors.HEADER + "INFO: Detecting UDP on Top 200 ports on " + ip_address + bcolors.ENDC
+    UDPSCAN = "nmap -n -Pn -A -sC -sU -T 3 --top-ports 200 -oA '../reports/%s/udp_%s_200' %s"  % (ip_address, ip_address, ip_address)
+    print bcolors.HEADER + UDPSCAN + bcolors.ENDC
+    udpscan_results = subprocess.check_output(UDPSCAN, shell=True)
+    print bcolors.OKGREEN + "INFO: RESULT BELOW - Finished with UDP-Nmap Top 200 scan for " + ip_address + bcolors.ENDC
+    print udpscan_results
 
 def sshScan(ip_address, port):
     print bcolors.HEADER + "INFO: Detected SSH on " + ip_address + ":" + port  + bcolors.ENDC
@@ -277,6 +306,8 @@ def nfsScan(ip_address, port):
     results_nfs = subprocess.check_output(NFSSCAN, shell=True)
     print bcolors.OKGREEN + "INFO: RESULT BELOW - Finished with NFS-Nmap-scan for " + ip_address + ":" + port + bcolors.ENDC
     print results_nfs
+
+    write_to_file(ip_address, "nfs", results_nfs)
     return
 
 def masscan(ip_address):
@@ -311,6 +342,10 @@ def masscan(ip_address):
         
         # Running nmap
         p = multiprocessing.Process(target=udpScan, args=(ip_address, udp_ports))
+        p.start()
+    else:
+        # Running nmap
+        p = multiprocessing.Process(target=udpTopScan, args=(ip_address,))
         p.start()
 
 def nmapScan(ip_address, ports):
@@ -397,6 +432,10 @@ def nmapScan(ip_address, ports):
             for port in ports:
                 port = port.split("/")[0]
                 multProc(nfsScan, ip_address, port)
+        elif "oracle" in serv:
+            for port in ports:
+                port = port.split("/")[0]
+                multProc(oracleEnum, ip_address, port)
 
     return
 

@@ -440,27 +440,23 @@ def nmapScan(ip_address, ports):
     return
 
 
-print(bcolors.HEADER)
-print("------------------------------------------------------------")
-print("!!!!                      RECON SCAN                   !!!!!")
-print("!!!!            A multi-process service scanner        !!!!!")
-print("!!!!        dirb, nikto, ftp, ssh, mssql, pop3, tcp    !!!!!")
-print("!!!!                    udp, smtp, smb                 !!!!!")
-print("------------------------------------------------------------")
-
-
-
-if len(sys.argv) < 2:
-    print("")
-    print("Usage: python reconscan.py <ip> <ip> <ip>")
-    print("Example: python reconscan.py 192.168.1.101 192.168.1.102")
-    print("")
-    print("############################################################")
-    sys.exit()
-
-print(bcolors.ENDC)
-
 if __name__ == '__main__':
+    print(bcolors.HEADER)
+    print("------------------------------------------------------------")
+    print("!!!!                      RECON SCAN                   !!!!!")
+    print("!!!!            A multi-process service scanner        !!!!!")
+    print("!!!!        dirb, nikto, ftp, ssh, mssql, pop3, tcp    !!!!!")
+    print("!!!!                    udp, smtp, smb                 !!!!!")
+    print("------------------------------------------------------------")
+    print(bcolors.ENDC)
+
+    if len(sys.argv) < 2:
+        print("")
+        print("Usage: python reconscan.py <ip> <ip> <ip>")
+        print("Example: python reconscan.py 192.168.1.101 192.168.1.102")
+        print("")
+        print("############################################################")
+        sys.exit()
 
     # Setting ip targets
     targets = sys.argv

@@ -1,46 +1,43 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 import sys
 import os
 import subprocess
 
 if len(sys.argv) != 5:
-    print "Usage: dirbust.py <target url> <port> <scan name> <log directory>"
+    print("Usage: dirbust.py <target url> <port> <scan name> <log directory>")
     sys.exit(0)
 
-url = str(sys.argv[1])
-port = str(sys.argv[2])
-name = str(sys.argv[3])
-log_dir = str(sys.argv[4])
-folders = ["/usr/share/dirb/wordlists", "/usr/share/dirb/wordlists/vulns"]
+url = sys.argv[1]
+port = sys.argv[2]
+name = sys.argv[3]
+log_dir = sys.argv[4]
+folders = ["/usr/share/dirb/wordlists", "/usr/share/dirb/wordlists/vulns",
+           "/usr/local/share/dirb/wordlists", "/usr/local/share/dirb/wordlists/vulns"]
 
-directory = "%s/%s/dirb/%s" % (log_dir, name, port)
-if not os.path.exists(directory):
-    os.makedirs(directory)
+directory = f"{log_dir}/{name}/dirb/{port}"
+os.makedirs(directory, exist_ok=True)
 
 found = []
-print "INFO: Starting dirb scan for " + url
+print(f"INFO: Starting dirb scan for {url}")
 for folder in folders:
+    if not os.path.exists(folder):
+        continue
     for filename in os.listdir(folder):
+        outfile = f"-o {log_dir}/{name}/dirb/{port}/{name}_dirb_{filename}"
+        cmd = f"dirb {url}:{port} {folder}/{filename} {outfile} -S -r"
+        print(cmd)
+        try:
+            results = subprocess.run(cmd, shell=True, capture_output=True, text=True, check=True).stdout
+            for line in results.splitlines():
+                if "+" in line and line not in found:
+                    found.append(line)
+        except subprocess.CalledProcessError:
+            pass
 
-		outfile = "-o %s/%s/dirb/%s/%s_dirb_%s" % (log_dir, name, port, name, filename)
-		#outfile = " -o " + "results/exam/" + name + "_dirb_" + filename
-		DIRBSCAN = "dirb %s:%s %s/%s %s -S -r" % (url, port, folder, filename, outfile)
-		print DIRBSCAN
-		try:
-			results = subprocess.check_output(DIRBSCAN, shell=True)
-			resultarr = results.split("\n")
-			for line in resultarr:
-				if "+" in line:
-					if line not in found:
-						found.append(line)
-		except:
-			pass
-
-try:
-    if found[0] != "":
-        print "[*] Dirb found the following items..."
-        for item in found:
-            print "   " + item
-except:
-    print "INFO: No items found during dirb scan of " + url		
+if found:
+    print("[*] Dirb found the following items...")
+    for item in found:
+        print(f"   {item}")
+else:
+    print(f"INFO: No items found during dirb scan of {url}")

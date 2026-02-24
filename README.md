@@ -1,25 +1,90 @@
 # oscp
 
-## Reconscan.py
+OSCP exam preparation toolkit containing automated recon scripts and attack checklists.
 
-This script is based on the script by [Mike Czumak](http://www.securitysift.com/offsec-pwb-oscp/). But it is heavily rewritten, some things have been added, other stuff has been removed. The script is written as a preparation for the OSCP exam. It was never meant to be a general script. So if you want to use it you have to make sure to fix all the hardcoded paths. The script is multithreaded and can be run against several hosts at once.
+> **Warning:** These scripts include invasive scans (dirb, nikto, nmap vulnerability scripts). Only run them against machines you have explicit permission to attack.
 
-The script is invoked like this:
+## Scripts
 
+### reconscan.py
+
+The main entry point. Based on the script by [Mike Czumak](http://www.securitysift.com/offsec-pwb-oscp/), but heavily rewritten. Runs multithreaded recon against one or more target hosts using masscan, nmap, dirb, nikto, and a range of service-specific enumeration tools.
+
+Requires sudo for UDP scanning.
+
+```bash
+cd recon_enum
+sudo python reconscan.py <ip> [<ip> ...]
 ```
-python reconscan.py 192.168.1.101 192.168.1.102 192.168.1.103
+
+**Services enumerated:** HTTP/S, FTP, SSH, SMTP, SMB, MySQL, MSSQL, Oracle, POP3, SNMP, NFS/RPC
+
+**Tools used:** masscan, nmap, dirb, nikto, curl, sslscan, enum4linux, smbmap, nbtscan, onesixtyone, snmpwalk, droopescan (optional)
+
+### dirbust.py
+
+Standalone web directory brute-forcer. Runs dirb against a target URL across multiple wordlists and collects discovered paths.
+
+```bash
+python dirbust.py <url> <port> <scan-name> <log-dir>
 ```
 
-One important thing to note is that I removed the scan for all ports. Because it would sometimes just take to long to run. So make sure you either add that scan or run it afterwards. So you don't miss any ports.
+Example:
+```bash
+python dirbust.py http://192.168.57.4 80 metasploitable "../reports"
+```
 
-Please note that the script includes dirb and nikto-scans that are very invasive. The script also includes several nmap-scripts that check for vulnerabilities. So yeah, this script would be pretty illegal and bad to run against a machine you don't have permission to attack.
+### sshrecon.py
+
+Standalone SSH credential brute-forcer. Uses hydra with the bundled wordlists to test SSH credentials against a target.
+
+```bash
+python sshrecon.py <ip> <port> <log-dir>
+```
+
+Example:
+```bash
+python sshrecon.py 192.168.57.4 22 "../reports"
+```
+
+## Setup
+
+```bash
+sudo bash setup.sh
+```
+
+This installs `reconscan` as a system command so it can be run from anywhere.
+
+## Reports
+
+Each target gets its own folder under `reports/<ip>/` containing:
+
+- `mapping-linux.md` / `mapping-windows.md` — populated from templates, used as attack checklists
+- Nmap, dirb, nikto, and other scan output files
+- `exploits/` and `privesc/` subdirectories for notes
+
+The `reports/` directory is gitignored.
 
 ## Templates
 
-I created two templates that I used as a guide for every machine I attacked. One template is for Linux machines and the other for windows. There are some differences between them. The templates became kind of my checklists. They are divided into three sections: **recon**, **privilege escalation** and **loot**.  
+Two markdown checklists (`linux-template.md`, `windows-template.md`) divided into three sections: **recon**, **privilege escalation**, and **loot**. `reconscan.py` automatically populates them with the target IP and scan results.
 
-The templates are written in markdown. But I never actually rendered them, so I don't really know how they look like rendered. They are probably pretty messy. I also used them together with markdown syntax-highlightning in my editor, so it became easy to navigate the files.
+## Requirements
 
-The templates have a few keywords in the, like **INSERTIPADDRESS**. These are hooks that are read by reconscan.py, and it insert the target machine IP-address automatically. Some other stuff are also inserted automatically, like the a basic nmap-scan. And nikto-scan.
+- Python
+- nmap, masscan, dirb, nikto, hydra, curl, sslscan
+- enum4linux, smbmap, nbtscan, onesixtyone, snmpwalk
+- droopescan (optional, for Drupal detection)
 
-Wherever there are references to a book. This is the book: https://bobloblaw.gitbooks.io/security/content/
+### macOS notes
+
+- `dirb` is not in Homebrew — build from source: https://github.com/v0re/dirb
+- `masscan` can be installed via `brew install masscan`
+- Metasploitable 2's SSH requires legacy algorithm support in `~/.ssh/config`:
+
+```
+Host <target-ip>
+  MACs hmac-sha1,hmac-md5
+  KexAlgorithms +diffie-hellman-group1-sha1,diffie-hellman-group14-sha1
+  HostKeyAlgorithms +ssh-rsa
+```
